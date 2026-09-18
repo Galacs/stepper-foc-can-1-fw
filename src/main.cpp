@@ -10,7 +10,6 @@ float calibrationLut[800] = {
 float zero_electric_angle = 2.044920;
 Direction sensor_direction = Direction::CW;
 
-// InlineCurrentSense current_sense  = InlineCurrentSense(0.01f, 50.0f, PB11, PB12);
 MagneticSensorSPI sensor = MagneticSensorSPI(AS5047_SPI, PA15);
 CalibratedSensor sensor_calibrated = CalibratedSensor(sensor, 800, calibrationLut);
 SPIClass SPI_3(PC12, PC11, PC10);
@@ -24,66 +23,41 @@ void setup() {
   SimpleFOCDebug::enable();
   motor.useMonitoring(Serial);
 
+  sensor.min_elapsed_time = 0.0003;
   sensor.init(&SPI_3);
 
-  // driver config
-  // power supply voltage [V]
   driver.voltage_power_supply = 12;
-  driver.voltage_limit = 4;
+  driver.voltage_limit = 10;
   driver.init();
-  // current_sense.linkDriver(&driver);
-  // link the motor and the driver
   motor.linkDriver(&driver);
-  // open loop control config
-  motor.controller = MotionControlType::torque;
-  // torque control mode 
+  motor.controller = MotionControlType::velocity;
   motor.torque_controller = TorqueControlType::estimated_current;
 
-  // setting target velocity
-  // motor.target = 3.14*2;  // [rad/s]
   motor.target = 0;
-  // limiting motor current (provided resistance)
-  motor.updateCurrentLimit(1.5);   // [Amps]
- 
-  // init motor hardware
+  motor.updateCurrentLimit(1.5);
+
   motor.phase_resistance = 2.3;
   motor.axis_inductance.d = 3.3/1000;
   motor.axis_inductance.q = 3.1/1000;
-  motor.KV_rating = 33;
+  motor.KV_rating = 38;
 
-  // motor.LPF_velocity = 0.02;
-  motor.LPF_velocity = 0.;
-  motor.PID_velocity.P = 0.2;
-  motor.PID_velocity.I = 20;
-  motor.PID_velocity.D = 0.001;
+  motor.LPF_velocity = 0.10;
+  motor.PID_velocity.P = 2.2;
+  motor.PID_velocity.I = 90;
+  motor.PID_velocity.D = 0.;
+
+  motor.updateVelocityLimit(30);
 
   motor.sensor_direction = sensor_direction;
   motor.zero_electric_angle = zero_electric_angle;
 
-  // current_sense.init();
-  // motor.linkCurrentSense(&current_sense);
   motor.init();
-  // sensor.min_elapsed_time = 0.000800;
-  // sensor_calibrated.voltage_calibration = 3;
-  // Serial.println("bf");
-  // sensor_calibrated.calibrate(motor);
-  // Serial.println("af");
   motor.linkSensor(&sensor_calibrated);
-  // motor.linkSensor(&sensor);
 
   motor.initFOC();
 
   Serial.println("Motor ready!");
   Serial.println("Set target velocity [rad/s]");
-
-  // int res = motor.tuneCurrentController(300.0);
-
-  // if (res != 0) {
-  //   Serial.printf("res: %d\n", res);
-  //   // 1: bandwidth <= 0
-  //   // 2: bandwidth too high for loop frequency
-  //   // 3: motor characterisation failed
-  // }
 
   HardwareTimer* timer = new HardwareTimer(TIM5);
   timer->setOverflow(11000, HERTZ_FORMAT); 
@@ -103,13 +77,6 @@ void setup() {
 
 unsigned long last_print = 0;
 void loop() {
-  // user communication
   command.run();
   motor.monitor();
-  //   if (millis() > last_print + 10) {
-  //   sensor.update();
-  //   Serial.print(sensor.getAngle());
-  //   Serial.print(" ");
-  //   Serial.println(sensor.getVelocity());
-  // }
 }
