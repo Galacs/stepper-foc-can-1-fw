@@ -13,10 +13,10 @@
 #define ENC_A_PIN PA12
 #define ENC_B_PIN PA11
 #define ENC_I_PIN PB4
-#define SPI_MOSI PC12
-#define SPI_MISO PC11
-#define SPI_CLK PC10
-#define SPI_CS PA15
+#define SPI_MOSI_PIN PC12
+#define SPI_MISO_PIN PC11
+#define SPI_CLK_PIN PC10
+#define SPI_CS_PIN PA15
 
 #define A_IN1_PIN PC7
 #define A_IN2_PIN PC6
