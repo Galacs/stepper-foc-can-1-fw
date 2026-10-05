@@ -79,5 +79,5 @@ void setup() {
 unsigned long last_print = 0;
 void loop() {
   command.run();
-  motor.monitor();
+  // motor.monitor();
 }
