@@ -18,7 +18,7 @@ static constexpr uint8_t FOC_STATUS_ENABLED = 1u << 0;
 static constexpr uint8_t FOC_STATUS_FAULT_A = 1u << 1;
 static constexpr uint8_t FOC_STATUS_FAULT_B = 1u << 2;
 
-struct foc_set_target_t {
+struct __attribute__((packed)) foc_set_target_t {
   float   target;   // rad (position) or rad/s (velocity)
   int16_t limit;    // position mode: velocity limit in 0.01 rad/s; 0 = firmware default
   uint8_t mode;
