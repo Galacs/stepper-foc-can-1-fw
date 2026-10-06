@@ -21,7 +21,7 @@ StepperMotor motor = StepperMotor(50);
 StepperDriver4PWM driver = StepperDriver4PWM(A_IN1_PIN, A_IN2_PIN, B_IN1_PIN, B_IN2_PIN, A_SLEEP_PIN, B_SLEEP_PIN);
 MagneticSensorSPI sensor = MagneticSensorSPI(AS5047_SPI, SPI_CS_PIN);
 foc_node_cfg node_cfg;
-CalibratedSensor sensor_calibrated = CalibratedSensor(sensor, 200, node_cfg.calibrationLut);
+CalibratedSensor* sensor_calibrated = nullptr;
 SPIClass SPI_3(SPI_MOSI_PIN, SPI_MISO_PIN, SPI_CLK_PIN);
 
 Commander command = Commander(Serial);
@@ -139,10 +139,16 @@ void setup() {
   SimpleFOCDebug::enable();
   motor.useMonitoring(Serial);
 
-  get_config(&node_cfg);
-
   sensor.min_elapsed_time = 0.0003;
   sensor.init(&SPI_3);
+
+  get_config(&node_cfg);
+  Serial.print("node id: ");
+  Serial.println(node_cfg.motor_id);
+  sensor_calibrated = new CalibratedSensor(sensor, CAL_LUT_LEN, node_cfg.calibrationLut);
+  delay(1000);
+  sensor_calibrated->calibrate(motor, 60);
+  motor.linkSensor(sensor_calibrated);
 
   driver.voltage_power_supply = 24;
   driver.voltage_limit = 10;
@@ -168,7 +174,6 @@ void setup() {
   motor.sensor_direction   = node_cfg.sensor_direction;
   motor.zero_electric_angle = node_cfg.zero_electric_angle;
 
-  motor.linkSensor(&sensor_calibrated);
   motor.init();
   motor.initFOC();
 
@@ -201,7 +206,7 @@ void loop() {
   sendFeedback();
   if ((int32_t)(millis() - next_dbg) >= 0) {
     next_dbg += 500;
-    Serial.print(motor.shaft_angle, 4); Serial.print('\t');
-    Serial.println(motor.shaft_velocity, 4);
+    // Serial.print(motor.shaft_angle, 4); Serial.print('\t');
+    // Serial.println(motor.shaft_velocity, 4);
   }
 }
