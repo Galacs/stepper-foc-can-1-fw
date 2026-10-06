@@ -142,14 +142,6 @@ void setup() {
   sensor.min_elapsed_time = 0.0003;
   sensor.init(&SPI_3);
 
-  get_config(&node_cfg);
-  Serial.print("node id: ");
-  Serial.println(node_cfg.motor_id);
-  sensor_calibrated = new CalibratedSensor(sensor, CAL_LUT_LEN, node_cfg.calibrationLut);
-  delay(1000);
-  sensor_calibrated->calibrate(motor, 60);
-  motor.linkSensor(sensor_calibrated);
-
   driver.voltage_power_supply = 24;
   driver.voltage_limit = 10;
   driver.init();
@@ -173,6 +165,14 @@ void setup() {
 
   motor.sensor_direction   = node_cfg.sensor_direction;
   motor.zero_electric_angle = node_cfg.zero_electric_angle;
+
+  get_config(&node_cfg);
+  Serial.print("node id: ");
+  Serial.println(node_cfg.motor_id);
+  sensor_calibrated = new CalibratedSensor(sensor, CAL_LUT_LEN, node_cfg.calibrationLut);
+  delay(1000);
+  sensor_calibrated->calibrate(motor, 60);
+  motor.linkSensor(sensor_calibrated);
 
   motor.init();
   motor.initFOC();
