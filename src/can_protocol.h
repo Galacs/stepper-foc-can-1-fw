@@ -1,10 +1,19 @@
 #pragma once
 #include <stdint.h>
 
-// CAN id layout: (node_id << 5) | cmd_id, standard 11-bit identifiers.
 static constexpr uint8_t FOC_CMD_SET_TARGET = 0x00;  // host -> mcu
 static constexpr uint8_t FOC_CMD_STATE      = 0x01;  // mcu  -> host
 static constexpr uint8_t FOC_CMD_STATUS     = 0x02;  // mcu  -> host
+
+static constexpr uint16_t FOC_CAN_BASE = 0x200;
+static constexpr uint16_t FOC_CAN_MASK = 0x7E0;
+
+static constexpr uint16_t foc_can_id(uint8_t node, uint8_t cmd) {
+  return FOC_CAN_BASE | ((uint16_t)(node & 0x07) << 2) | (cmd & 0x03);
+}
+static constexpr bool    foc_id_is_ours(uint32_t id) { return (id & FOC_CAN_MASK) == FOC_CAN_BASE; }
+static constexpr uint8_t foc_id_node(uint32_t id)    { return (id >> 2) & 0x07; }
+static constexpr uint8_t foc_id_cmd(uint32_t id)     { return id & 0x03; }
 
 static constexpr uint8_t FOC_MODE_IDLE     = 0;
 static constexpr uint8_t FOC_MODE_VELOCITY = 1;

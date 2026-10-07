@@ -51,7 +51,7 @@ static bool sendFrame(uint8_t cmd, const void* payload, uint8_t len) {
   CANFDMessage msg;
   msg.ext  = false;
   msg.type = CAN_FRAME_TYPE;
-  msg.id   = ((uint32_t)node_cfg.motor_id << 5) | (cmd & 0x1F);
+  msg.id   = foc_can_id(node_cfg.motor_id, cmd);
   msg.len  = len;
   memcpy(msg.data, payload, len);
   return fdcan2.tryToSendReturnStatusFD(msg) == 0;
@@ -91,10 +91,12 @@ static void applySetTarget(const foc_set_target_t& t) {
 
 static void handleCan() {
   CANFDMessage msg;
+
   while (fdcan2.receiveFD0(msg)) {
     if (msg.ext) continue;
-    if ((uint8_t)((msg.id >> 5) & 0x3F) != node_cfg.motor_id) continue;
-    if ((uint8_t)(msg.id & 0x1F) == FOC_CMD_SET_TARGET &&
+    if (!foc_id_is_ours(msg.id)) continue;
+    if (foc_id_node(msg.id) != node_cfg.motor_id) continue;
+    if (foc_id_cmd(msg.id) == FOC_CMD_SET_TARGET &&
         msg.len >= sizeof(foc_set_target_t)) {
       foc_set_target_t t;
       memcpy(&t, msg.data, sizeof(t));
@@ -188,7 +190,11 @@ void setup() {
   pinMode(B_FAULT_PIN, INPUT_PULLUP);
 
   ACANFD_STM32_Settings settings(CAN_BITRATE, DataBitRateFactor::x1);
-  const uint32_t err = fdcan2.beginFD(settings);   // PB6 / PB5
+  settings.mNonMatchingStandardFrameReception = ACANFD_STM32_FilterAction::REJECT;
+  ACANFD_STM32_StandardFilters filters;
+  filters.addClassic(foc_can_id(node_cfg.motor_id, FOC_CMD_SET_TARGET),
+                    0x7FF, ACANFD_STM32_FilterAction::FIFO0);
+  const uint32_t err = fdcan2.beginFD(settings, filters);
   if (err != 0) { Serial.print("FDCAN init failed: 0x"); Serial.println(err, HEX); }
 
   focTimer = new HardwareTimer(TIM5);
