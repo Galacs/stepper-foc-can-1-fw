@@ -40,7 +40,7 @@ HardwareTimer* focTimer = nullptr;
 
 static void focLoopISR() {
   const uint32_t t0 = micros();
-  motor.target = g_enabled ? g_target : 0.0f;
+  // motor.target = g_enabled ? g_target : 0.0f;
   motor.loopFOC();
   motor.move();
   const uint32_t dt = micros() - t0;
@@ -139,8 +139,14 @@ void setup() {
   SimpleFOCDebug::enable();
   motor.useMonitoring(Serial);
 
+  get_config(&node_cfg);
+  Serial.print("node id: ");
+  Serial.println(node_cfg.motor_id);
+
   sensor.min_elapsed_time = 0.0003;
   sensor.init(&SPI_3);
+
+  motor.linkSensor(&sensor);
 
   driver.voltage_power_supply = 24;
   driver.voltage_limit = 10;
@@ -166,15 +172,16 @@ void setup() {
   motor.sensor_direction   = node_cfg.sensor_direction;
   motor.zero_electric_angle = node_cfg.zero_electric_angle;
 
-  get_config(&node_cfg);
-  Serial.print("node id: ");
-  Serial.println(node_cfg.motor_id);
+  motor.init();
+
+  // sensor_calibrated = new CalibratedSensor(sensor);
   sensor_calibrated = new CalibratedSensor(sensor, CAL_LUT_LEN, node_cfg.calibrationLut);
-  delay(1000);
-  sensor_calibrated->calibrate(motor, 60);
+  sensor_calibrated->voltage_calibration = 5;
+  if (!node_cfg.calibrationLut) {
+    sensor_calibrated->calibrate(motor, 60);
+  }
   motor.linkSensor(sensor_calibrated);
 
-  motor.init();
   motor.initFOC();
 
   pinMode(A_FAULT_PIN, INPUT_PULLUP);
@@ -202,8 +209,9 @@ void setup() {
 static uint32_t next_dbg = 0;
 void loop() {
   command.run();
-  handleCan();
-  sendFeedback();
+  // motor.monitor();
+  // handleCan();
+  // sendFeedback();
   if ((int32_t)(millis() - next_dbg) >= 0) {
     next_dbg += 500;
     // Serial.print(motor.shaft_angle, 4); Serial.print('\t');
