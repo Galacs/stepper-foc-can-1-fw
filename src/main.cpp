@@ -40,7 +40,7 @@ HardwareTimer* focTimer = nullptr;
 
 static void focLoopISR() {
   const uint32_t t0 = micros();
-  // motor.target = g_enabled ? g_target : 0.0f;
+  motor.target = g_enabled ? g_target : 0.0f;
   motor.loopFOC();
   motor.move();
   const uint32_t dt = micros() - t0;
@@ -210,8 +210,8 @@ static uint32_t next_dbg = 0;
 void loop() {
   command.run();
   // motor.monitor();
-  // handleCan();
-  // sendFeedback();
+  handleCan();
+  sendFeedback();
   if ((int32_t)(millis() - next_dbg) >= 0) {
     next_dbg += 500;
     // Serial.print(motor.shaft_angle, 4); Serial.print('\t');
